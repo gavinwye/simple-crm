@@ -25,7 +25,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         OR LOWER(c.primary_email) LIKE ${like}
         OR LOWER(c.title) LIKE ${like}
         OR LOWER(c.notes) LIKE ${like}
-        OR LOWER(c.tags) LIKE ${like}
+        OR LOWER(c.tags::text) LIKE ${like}
       LIMIT 25
     `);
     orgsHits = await dbAll<OrgHit>(sql`
@@ -34,7 +34,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       WHERE LOWER(name) LIKE ${like}
         OR LOWER(common_name) LIKE ${like}
         OR LOWER(notes) LIKE ${like}
-        OR LOWER(tags) LIKE ${like}
+        OR LOWER(tags::text) LIKE ${like}
       LIMIT 25
     `);
     interactionsHits = await dbAll<InteractionHit>(sql`
@@ -43,7 +43,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       WHERE LOWER(title) LIKE ${like}
         OR LOWER(body) LIKE ${like}
         OR LOWER(summary) LIKE ${like}
-        OR LOWER(tags) LIKE ${like}
+        OR LOWER(tags::text) LIKE ${like}
       ORDER BY occurred_at DESC
       LIMIT 50
     `);
