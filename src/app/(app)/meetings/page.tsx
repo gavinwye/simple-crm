@@ -5,7 +5,7 @@ import { db, dbAll } from '@/db';
 type Row = {
   id: string;
   title: string;
-  occurred_at: number;
+  occurred_at: Date;
   location: string | null;
   organisations: string | null;
   attendee_names: string | null;
@@ -16,12 +16,12 @@ type Row = {
 export default async function MeetingsPage() {
   const rows = await dbAll<Row>(sql`
     SELECT i.id, i.title, i.occurred_at, i.location,
-      (SELECT GROUP_CONCAT(DISTINCT COALESCE(o.common_name, o.name))
+      (SELECT STRING_AGG(DISTINCT COALESCE(o.common_name, o.name), ', ')
         FROM interaction_participants p
         JOIN contacts c ON c.id = p.contact_id
         JOIN organisations o ON o.id = c.organisation_id
         WHERE p.interaction_id = i.id) AS organisations,
-      (SELECT GROUP_CONCAT(c.full_name, ', ')
+      (SELECT STRING_AGG(c.full_name, ', ')
         FROM interaction_participants p
         JOIN contacts c ON c.id = p.contact_id
         WHERE p.interaction_id = i.id) AS attendee_names,
@@ -35,7 +35,7 @@ export default async function MeetingsPage() {
   // Group by ISO week (Monday-based)
   const grouped = new Map<string, Row[]>();
   rows.forEach((r) => {
-    const week = isoWeekKey(new Date(r.occurred_at * 1000));
+    const week = isoWeekKey(new Date(r.occurred_at));
     if (!grouped.has(week)) grouped.set(week, []);
     grouped.get(week)!.push(r);
   });
@@ -71,7 +71,7 @@ export default async function MeetingsPage() {
             </h3>
             <div className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100">
               {items.map((r) => {
-                const d = new Date(r.occurred_at * 1000);
+                const d = new Date(r.occurred_at);
                 return (
                   <Link key={r.id} href={`/meetings/${r.id}`} className="px-5 py-4 hover:bg-slate-50 flex items-center gap-4">
                     <div className="flex flex-col items-center w-12 flex-shrink-0">
