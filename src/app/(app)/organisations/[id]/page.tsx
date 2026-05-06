@@ -78,7 +78,7 @@ export default async function OrganisationDetailPage({
       (SELECT COUNT(*) FROM contacts WHERE organisation_id IN (${sql.join(
         descendantIdList.map((id) => sql`${id}`),
         sql`, `,
-      )})) AS subtreeContacts,
+      )}))::int AS "subtreeContacts",
       (SELECT COUNT(DISTINCT i.id)
          FROM interactions i
          JOIN interaction_participants p ON p.interaction_id = i.id
@@ -86,7 +86,7 @@ export default async function OrganisationDetailPage({
          WHERE c.organisation_id IN (${sql.join(
            descendantIdList.map((id) => sql`${id}`),
            sql`, `,
-         )})) AS subtreeInteractions
+         )}))::int AS "subtreeInteractions"
   `);
 
   const departments = children.filter((c) => c.type === 'department');
