@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { sql } from 'drizzle-orm';
-import { db } from '@/db';
+import { db, dbAll } from '@/db';
 import { avatarClasses, initials, relativeDays } from '@/lib/utils';
 
 export default async function ContactsPage({
@@ -12,7 +12,7 @@ export default async function ContactsPage({
 
   const filter = q ? `%${q.toLowerCase()}%` : null;
 
-  const rows = await db.all<{
+  const rows = await dbAll<{
     id: string;
     slug: string;
     full_name: string;

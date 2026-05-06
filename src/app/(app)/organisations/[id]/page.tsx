@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { eq, sql } from 'drizzle-orm';
-import { db } from '@/db';
+import { db, dbAll } from '@/db';
 import { organisations } from '@/db/schema';
 import { avatarClasses, initials, formatDate, relativeDays } from '@/lib/utils';
 import { getOrgAncestry, getOrgChildren, getOrgDescendantIds, typeLabel, isGovernmentType, type OrgNode } from '@/lib/org-tree';
@@ -31,7 +31,7 @@ export default async function OrganisationDetailPage({
   const placeholders = descendantIdList.map(() => '?').join(', ');
 
   // Direct contacts only (not inherited from children)
-  const orgContacts = await db.all<{
+  const orgContacts = await dbAll<{
     id: string;
     slug: string;
     full_name: string;
@@ -53,7 +53,7 @@ export default async function OrganisationDetailPage({
 
   // Activity across this org AND all descendants — folds department / agency
   // activity into the parent ministry view.
-  const recent = await db.all<{
+  const recent = await dbAll<{
     id: string;
     title: string;
     kind: string;
@@ -70,7 +70,7 @@ export default async function OrganisationDetailPage({
   `);
 
   // Aggregate counts across the subtree.
-  const [{ subtreeContacts, subtreeInteractions }] = await db.all<{
+  const [{ subtreeContacts, subtreeInteractions }] = await dbAll<{
     subtreeContacts: number;
     subtreeInteractions: number;
   }>(sql`

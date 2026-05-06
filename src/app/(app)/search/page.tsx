@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { sql } from 'drizzle-orm';
-import { db } from '@/db';
+import { db, dbAll } from '@/db';
 import { initials, formatDate, avatarClasses } from '@/lib/utils';
 
 type ContactHit = { kind: 'contact'; id: string; slug: string; full_name: string; title: string | null; organisation_name: string | null; avatar_colour: string };
@@ -17,7 +17,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   let interactionsHits: InteractionHit[] = [];
 
   if (term) {
-    contactsHits = await db.all<ContactHit>(sql`
+    contactsHits = await dbAll<ContactHit>(sql`
       SELECT 'contact' AS kind, c.id, c.slug, c.full_name, c.title, c.avatar_colour, o.name AS organisation_name
       FROM contacts c
       LEFT JOIN organisations o ON o.id = c.organisation_id
@@ -28,7 +28,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         OR LOWER(c.tags) LIKE ${like}
       LIMIT 25
     `);
-    orgsHits = await db.all<OrgHit>(sql`
+    orgsHits = await dbAll<OrgHit>(sql`
       SELECT 'organisation' AS kind, id, slug, name, type
       FROM organisations
       WHERE LOWER(name) LIKE ${like}
@@ -37,7 +37,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         OR LOWER(tags) LIKE ${like}
       LIMIT 25
     `);
-    interactionsHits = await db.all<InteractionHit>(sql`
+    interactionsHits = await dbAll<InteractionHit>(sql`
       SELECT 'interaction' AS kind, id, title, kind AS ikind, occurred_at, summary, body, review_status
       FROM interactions
       WHERE LOWER(title) LIKE ${like}

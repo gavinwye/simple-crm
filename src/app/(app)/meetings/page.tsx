@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { sql } from 'drizzle-orm';
-import { db } from '@/db';
+import { db, dbAll } from '@/db';
 
 type Row = {
   id: string;
@@ -14,7 +14,7 @@ type Row = {
 };
 
 export default async function MeetingsPage() {
-  const rows = await db.all<Row>(sql`
+  const rows = await dbAll<Row>(sql`
     SELECT i.id, i.title, i.occurred_at, i.location,
       (SELECT GROUP_CONCAT(DISTINCT COALESCE(o.common_name, o.name))
         FROM interaction_participants p

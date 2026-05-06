@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { sql } from 'drizzle-orm';
-import { db } from '@/db';
+import { db, dbAll } from '@/db';
 import { requireRole } from '@/lib/auth';
 import { avatarClasses, initials, formatDateTime, cn } from '@/lib/utils';
 
@@ -39,7 +39,7 @@ export default async function AuditLogPage({
   const pageNum = Math.max(1, Number(page) || 1);
   const offset = (pageNum - 1) * PAGE_SIZE;
 
-  const rows = await db.all<Row>(sql`
+  const rows = await dbAll<Row>(sql`
     SELECT a.id, a.occurred_at, a.action, a.entity_type, a.entity_id, a.details,
       u.id AS actor_id, u.name AS actor_name, u.avatar_colour AS actor_avatar_colour
     FROM audit_log a

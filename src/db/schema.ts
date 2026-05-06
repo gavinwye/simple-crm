@@ -1,11 +1,14 @@
 import { sql } from 'drizzle-orm';
 import {
-  sqliteTable,
+  pgTable,
   text,
   integer,
+  timestamp,
+  boolean,
+  jsonb,
   index,
   uniqueIndex,
-} from 'drizzle-orm/sqlite-core';
+} from 'drizzle-orm/pg-core';
 
 // Used by interactions.suggestedParticipants. A name extracted from the body
 // of an email or transcript, plus the candidate contacts the matcher found.
@@ -23,7 +26,7 @@ export type SuggestedParticipant = {
 };
 
 // --- Users (GovTech team members) ---
-export const users = sqliteTable(
+export const users = pgTable(
   'users',
   {
     id: text('id').primaryKey(),
@@ -33,9 +36,9 @@ export const users = sqliteTable(
       .notNull()
       .default('member'),
     avatarColour: text('avatar_colour').notNull().default('amber'),
-    createdAt: integer('created_at', { mode: 'timestamp' })
+    createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
-      .default(sql`(unixepoch())`),
+      .defaultNow(),
   },
   (t) => ({
     emailIdx: index('users_email_idx').on(t.email),
@@ -43,7 +46,7 @@ export const users = sqliteTable(
 );
 
 // --- Organisations (MDAs, vendors, partners) ---
-export const organisations = sqliteTable(
+export const organisations = pgTable(
   'organisations',
   {
     id: text('id').primaryKey(),
@@ -67,15 +70,13 @@ export const organisations = sqliteTable(
     })
       .notNull()
       .default('ministry'),
-    // Self-reference. SQLite doesn't strictly enforce this, but the column is
-    // intended to point at another organisations.id (or be null for top-level).
     parentId: text('parent_id'),
     website: text('website'),
     notes: text('notes'),
-    tags: text('tags', { mode: 'json' }).$type<string[]>().default([]),
-    createdAt: integer('created_at', { mode: 'timestamp' })
+    tags: jsonb('tags').$type<string[]>().default([]),
+    createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
-      .default(sql`(unixepoch())`),
+      .defaultNow(),
     createdBy: text('created_by').references(() => users.id),
   },
   (t) => ({
@@ -85,7 +86,7 @@ export const organisations = sqliteTable(
 );
 
 // --- Contacts (people in stakeholder organisations) ---
-export const contacts = sqliteTable(
+export const contacts = pgTable(
   'contacts',
   {
     id: text('id').primaryKey(),
@@ -95,13 +96,13 @@ export const contacts = sqliteTable(
     organisationId: text('organisation_id').references(() => organisations.id),
     primaryEmail: text('primary_email'),
     phone: text('phone'),
-    sensitive: integer('sensitive', { mode: 'boolean' }).notNull().default(false),
+    sensitive: boolean('sensitive').notNull().default(false),
     notes: text('notes'),
-    tags: text('tags', { mode: 'json' }).$type<string[]>().default([]),
+    tags: jsonb('tags').$type<string[]>().default([]),
     avatarColour: text('avatar_colour').notNull().default('blue'),
-    createdAt: integer('created_at', { mode: 'timestamp' })
+    createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
-      .default(sql`(unixepoch())`),
+      .defaultNow(),
     createdBy: text('created_by').references(() => users.id),
   },
   (t) => ({
@@ -112,7 +113,7 @@ export const contacts = sqliteTable(
 );
 
 // --- Projects (lightweight initiative tagging) ---
-export const projects = sqliteTable('projects', {
+export const projects = pgTable('projects', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   description: text('description'),
@@ -120,47 +121,42 @@ export const projects = sqliteTable('projects', {
     .notNull()
     .default('active'),
   leadUserId: text('lead_user_id').references(() => users.id),
-  createdAt: integer('created_at', { mode: 'timestamp' })
+  createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .defaultNow(),
 });
 
 // --- Interactions (the timeline spine: meetings, emails, notes) ---
-export const interactions = sqliteTable(
+export const interactions = pgTable(
   'interactions',
   {
     id: text('id').primaryKey(),
     kind: text('kind', { enum: ['meeting', 'email', 'note', 'call'] }).notNull(),
-    occurredAt: integer('occurred_at', { mode: 'timestamp' }).notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
     title: text('title').notNull(),
     summary: text('summary'),
     body: text('body'),
     location: text('location'),
     durationMinutes: integer('duration_minutes'),
     projectId: text('project_id').references(() => projects.id),
-    sensitive: integer('sensitive', { mode: 'boolean' }).notNull().default(false),
-    tags: text('tags', { mode: 'json' }).$type<string[]>().default([]),
+    sensitive: boolean('sensitive').notNull().default(false),
+    tags: jsonb('tags').$type<string[]>().default([]),
     // Email-specific
     emailMessageId: text('email_message_id'),
     emailFromAddress: text('email_from_address'),
-    emailHeaders: text('email_headers', { mode: 'json' }).$type<Record<string, string>>(),
+    emailHeaders: jsonb('email_headers').$type<Record<string, string>>(),
     // Review state for AI-extracted records
     reviewStatus: text('review_status', { enum: ['confirmed', 'pending', 'rejected'] })
       .notNull()
       .default('confirmed'),
-    decisions: text('decisions', { mode: 'json' }).$type<string[]>().default([]),
-    // People mentioned in the body but not in the To/From/Cc headers, with
-    // candidate contact matches for the user to confirm at review time.
-    suggestedParticipants: text('suggested_participants', { mode: 'json' })
+    decisions: jsonb('decisions').$type<string[]>().default([]),
+    suggestedParticipants: jsonb('suggested_participants')
       .$type<SuggestedParticipant[]>()
       .default([]),
-    // Raw transcript text from an AI notetaker (Krisp, Granola, etc.).
-    // Stored separately from `body` so the meeting page can show summary +
-    // notes by default, with the transcript as a collapsible section.
     transcript: text('transcript'),
-    createdAt: integer('created_at', { mode: 'timestamp' })
+    createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
-      .default(sql`(unixepoch())`),
+      .defaultNow(),
     createdBy: text('created_by').references(() => users.id),
   },
   (t) => ({
@@ -171,7 +167,7 @@ export const interactions = sqliteTable(
 );
 
 // --- Interaction participants (external contacts present) ---
-export const interactionParticipants = sqliteTable(
+export const interactionParticipants = pgTable(
   'interaction_participants',
   {
     interactionId: text('interaction_id')
@@ -191,7 +187,7 @@ export const interactionParticipants = sqliteTable(
 );
 
 // --- Interaction internal attendees (GovTech users) ---
-export const interactionInternalAttendees = sqliteTable(
+export const interactionInternalAttendees = pgTable(
   'interaction_internal_attendees',
   {
     interactionId: text('interaction_id')
@@ -207,10 +203,7 @@ export const interactionInternalAttendees = sqliteTable(
 );
 
 // --- Contact connectors (which GovTech members "know" each contact) ---
-// Many-to-many: a contact can have several connectors and a team member can
-// connect to many contacts. Used so we know whose relationship to leverage
-// when reaching into an MDA. Strength + notes capture how warm the link is.
-export const contactConnectors = sqliteTable(
+export const contactConnectors = pgTable(
   'contact_connectors',
   {
     id: text('id').primaryKey(),
@@ -224,9 +217,9 @@ export const contactConnectors = sqliteTable(
       .notNull()
       .default('professional'),
     notes: text('notes'),
-    createdAt: integer('created_at', { mode: 'timestamp' })
+    createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
-      .default(sql`(unixepoch())`),
+      .defaultNow(),
     createdBy: text('created_by').references(() => users.id),
   },
   (t) => ({
@@ -237,7 +230,7 @@ export const contactConnectors = sqliteTable(
 );
 
 // --- Action items ---
-export const actionItems = sqliteTable(
+export const actionItems = pgTable(
   'action_items',
   {
     id: text('id').primaryKey(),
@@ -247,14 +240,14 @@ export const actionItems = sqliteTable(
     description: text('description').notNull(),
     ownerUserId: text('owner_user_id').references(() => users.id),
     ownerContactId: text('owner_contact_id').references(() => contacts.id),
-    dueDate: integer('due_date', { mode: 'timestamp' }),
+    dueDate: timestamp('due_date', { withTimezone: true }),
     status: text('status', { enum: ['open', 'done', 'dropped'] })
       .notNull()
       .default('open'),
-    createdAt: integer('created_at', { mode: 'timestamp' })
+    createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
-      .default(sql`(unixepoch())`),
-    completedAt: integer('completed_at', { mode: 'timestamp' }),
+      .defaultNow(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
   },
   (t) => ({
     statusIdx: index('actions_status_idx').on(t.status),
@@ -264,7 +257,7 @@ export const actionItems = sqliteTable(
 );
 
 // --- Audit log ---
-export const auditLog = sqliteTable(
+export const auditLog = pgTable(
   'audit_log',
   {
     id: text('id').primaryKey(),
@@ -272,10 +265,10 @@ export const auditLog = sqliteTable(
     action: text('action').notNull(),
     entityType: text('entity_type').notNull(),
     entityId: text('entity_id'),
-    details: text('details', { mode: 'json' }),
-    occurredAt: integer('occurred_at', { mode: 'timestamp' })
+    details: jsonb('details'),
+    occurredAt: timestamp('occurred_at', { withTimezone: true })
       .notNull()
-      .default(sql`(unixepoch())`),
+      .defaultNow(),
   },
   (t) => ({
     occurredIdx: index('audit_occurred_idx').on(t.occurredAt),
@@ -284,17 +277,17 @@ export const auditLog = sqliteTable(
 );
 
 // --- Sessions (cookie-backed) ---
-export const sessions = sqliteTable(
+export const sessions = pgTable(
   'sessions',
   {
     id: text('id').primaryKey(),
     userId: text('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp' })
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
-      .default(sql`(unixepoch())`),
+      .defaultNow(),
   },
   (t) => ({
     userIdx: index('sessions_user_idx').on(t.userId),
@@ -302,13 +295,13 @@ export const sessions = sqliteTable(
 );
 
 // --- App settings (small key-value store for admin-tunable preferences) ---
-export const appSettings = sqliteTable('app_settings', {
+export const appSettings = pgTable('app_settings', {
   key: text('key').primaryKey(),
   /** JSON-encoded value. Use the helpers in lib/settings.ts to read/write. */
   value: text('value').notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp' })
+  updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()
-    .default(sql`(unixepoch())`),
+    .defaultNow(),
   updatedBy: text('updated_by').references(() => users.id),
 });
 

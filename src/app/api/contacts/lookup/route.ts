@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sql } from 'drizzle-orm';
-import { db } from '@/db';
+import { db, dbAll } from '@/db';
 import { requireUser } from '@/lib/auth';
 
 /**
@@ -19,7 +19,7 @@ export async function GET(req: Request) {
   const like = `%${q}%`;
   const prefix = `${q}%`;
 
-  const rows = await db.all<{
+  const rows = await dbAll<{
     id: string;
     slug: string;
     fullName: string;

@@ -1,6 +1,6 @@
 import 'server-only';
 import { sql } from 'drizzle-orm';
-import { db } from '@/db';
+import { db, dbAll } from '@/db';
 
 export type OrgNode = {
   id: string;
@@ -41,7 +41,7 @@ export function isGovernmentType(type: string): boolean {
  * [Digital Government Department, MIST].
  */
 export async function getOrgAncestry(orgId: string): Promise<OrgNode[]> {
-  const rows = await db.all<OrgNode>(sql`
+  const rows = await dbAll<OrgNode>(sql`
     WITH RECURSIVE ancestry(id, slug, name, common_name, type, parent_id, depth) AS (
       SELECT id, slug, name, common_name, type, parent_id, 0
       FROM organisations
@@ -64,7 +64,7 @@ export async function getOrgAncestry(orgId: string): Promise<OrgNode[]> {
  * and agencies.
  */
 export async function getOrgDescendantIds(orgId: string): Promise<string[]> {
-  const rows = await db.all<{ id: string }>(sql`
+  const rows = await dbAll<{ id: string }>(sql`
     WITH RECURSIVE descendants(id) AS (
       SELECT id FROM organisations WHERE id = ${orgId}
       UNION ALL
@@ -81,7 +81,7 @@ export async function getOrgDescendantIds(orgId: string): Promise<string[]> {
  * Direct children of an org (one level only).
  */
 export async function getOrgChildren(orgId: string): Promise<OrgNode[]> {
-  return db.all<OrgNode>(sql`
+  return dbAll<OrgNode>(sql`
     SELECT id, slug, name, common_name AS commonName, type, parent_id AS parentId
     FROM organisations
     WHERE parent_id = ${orgId}

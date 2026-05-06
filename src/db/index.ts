@@ -1,21 +1,21 @@
 import 'server-only';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+import type { SQL } from 'drizzle-orm';
 import * as schema from './schema';
-import path from 'node:path';
-import fs from 'node:fs';
 
-const dbPath = process.env.DATABASE_URL ?? 'data/dev.db';
+const url = process.env.DATABASE_URL;
+if (!url) throw new Error('DATABASE_URL environment variable is required');
 
-// Ensure the data directory exists.
-const dir = path.dirname(dbPath);
-if (dir && dir !== '.' && !fs.existsSync(dir)) {
-  fs.mkdirSync(dir, { recursive: true });
-}
-
-const sqlite = new Database(dbPath);
-sqlite.pragma('journal_mode = WAL');
-sqlite.pragma('foreign_keys = ON');
-
-export const db = drizzle(sqlite, { schema });
+const client = neon(url);
+export const db = drizzle(client, { schema });
 export { schema };
+
+/**
+ * Execute a raw SQL query and return typed rows. Postgres replacement for
+ * the SQLite driver's `db.all<T>(...)` shorthand.
+ */
+export async function dbAll<T>(query: SQL): Promise<T[]> {
+  const result = await db.execute(query);
+  return result.rows as T[];
+}

@@ -1,6 +1,6 @@
 import 'server-only';
 import { sql } from 'drizzle-orm';
-import { db } from '@/db';
+import { db, dbAll } from '@/db';
 import type { SuggestedParticipant } from '@/db/schema';
 
 type MentionedPerson = { name: string; role?: string };
@@ -28,7 +28,7 @@ export async function findCandidatesForNames(
 
   // Pull all contacts once. At pilot scale (<2k contacts) this is far cheaper
   // than a query per name.
-  const all = await db.all<{
+  const all = await dbAll<{
     id: string;
     slug: string;
     full_name: string;

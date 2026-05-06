@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
 import { sql } from 'drizzle-orm';
-import { db } from '@/db';
+import { db, dbAll } from '@/db';
 import { requireRole } from '@/lib/auth';
 import { CopyButton } from '@/components/copy-button';
 import { formatDateTime } from '@/lib/utils';
@@ -20,7 +20,7 @@ export default async function EmailSettingsPage() {
   const webhookUrl = `${proto}://${host}/api/inbound/email`;
 
   // Recent ingest activity
-  const recent = await db.all<{
+  const recent = await dbAll<{
     id: string;
     occurred_at: number;
     title: string;

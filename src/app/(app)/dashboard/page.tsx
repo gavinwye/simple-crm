@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { and, desc, eq, sql, count } from 'drizzle-orm';
-import { db } from '@/db';
+import { db, dbAll } from '@/db';
 import { contacts, organisations, interactions, actionItems } from '@/db/schema';
 import { requireUser } from '@/lib/auth';
 import { formatDate, relativeDays, avatarClasses, initials } from '@/lib/utils';
@@ -22,7 +22,7 @@ export default async function DashboardPage() {
   const [{ meetingsThisMonth }] = await db
     .select({ meetingsThisMonth: count() })
     .from(interactions)
-    .where(and(eq(interactions.kind, 'meeting'), sql`${interactions.occurredAt} >= ${Math.floor(startOfMonth.getTime() / 1000)}`));
+    .where(and(eq(interactions.kind, 'meeting'), sql`${interactions.occurredAt} >= ${startOfMonth}`));
 
   const [{ openActionsCount }] = await db
     .select({ openActionsCount: count() })
@@ -32,7 +32,7 @@ export default async function DashboardPage() {
   const [{ overdueActionsCount }] = await db
     .select({ overdueActionsCount: count() })
     .from(actionItems)
-    .where(and(eq(actionItems.status, 'open'), sql`${actionItems.dueDate} < ${Math.floor(Date.now() / 1000)}`));
+    .where(and(eq(actionItems.status, 'open'), sql`${actionItems.dueDate} < ${new Date()}`));
 
   // Recent activity
   const recentInteractions = await db
@@ -56,23 +56,25 @@ export default async function DashboardPage() {
     .limit(5);
 
   // Dormant relationships (no contact in 90+ days)
-  const ninetyDaysAgo = Math.floor(Date.now() / 1000) - 90 * 86400;
-  const dormant = await db.all<{
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 86400 * 1000);
+  const dormant = await dbAll<{
     id: string;
     slug: string;
     full_name: string;
     organisation_name: string | null;
-    last_seen: number;
+    last_seen: Date;
     avatar_colour: string;
   }>(sql`
     SELECT c.id, c.slug, c.full_name, c.avatar_colour, o.common_name AS organisation_name,
-      COALESCE((SELECT MAX(i.occurred_at) FROM interactions i
-                JOIN interaction_participants p ON p.interaction_id = i.id
-                WHERE p.contact_id = c.id), 0) AS last_seen
+      (SELECT MAX(i.occurred_at) FROM interactions i
+       JOIN interaction_participants p ON p.interaction_id = i.id
+       WHERE p.contact_id = c.id) AS last_seen
     FROM contacts c
     LEFT JOIN organisations o ON o.id = c.organisation_id
-    GROUP BY c.id
-    HAVING last_seen > 0 AND last_seen < ${ninetyDaysAgo}
+    GROUP BY c.id, c.slug, c.full_name, c.avatar_colour, o.common_name
+    HAVING (SELECT MAX(i.occurred_at) FROM interactions i
+            JOIN interaction_participants p ON p.interaction_id = i.id
+            WHERE p.contact_id = c.id) < ${ninetyDaysAgo}
     ORDER BY last_seen ASC
     LIMIT 4
   `);
@@ -203,7 +205,7 @@ export default async function DashboardPage() {
                         <div className="flex-1 min-w-0">
                           <div className="text-sm">{d.full_name}</div>
                           <div className="text-xs text-slate-500">
-                            {d.organisation_name ?? '—'} · {relativeDays(new Date(d.last_seen * 1000))}
+                            {d.organisation_name ?? '—'} · {relativeDays(new Date(d.last_seen))}
                           </div>
                         </div>
                       </Link>

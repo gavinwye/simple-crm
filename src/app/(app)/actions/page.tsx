@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { sql } from 'drizzle-orm';
-import { db } from '@/db';
+import { db, dbAll } from '@/db';
 import { requireUser } from '@/lib/auth';
 import { formatDate } from '@/lib/utils';
 import { ActionCheckbox } from '@/components/action-checkbox';
@@ -13,15 +13,15 @@ export default async function ActionsPage({ searchParams }: { searchParams: Prom
   if (filter === 'mine') {
     whereClause = sql`a.status = 'open' AND a.owner_user_id = ${user.id}`;
   } else if (filter === 'overdue') {
-    whereClause = sql`a.status = 'open' AND a.due_date < ${Math.floor(Date.now() / 1000)}`;
+    whereClause = sql`a.status = 'open' AND a.due_date < ${new Date()}`;
   } else if (filter === 'done') {
     whereClause = sql`a.status = 'done'`;
   }
 
-  const rows = await db.all<{
+  const rows = await dbAll<{
     id: string;
     description: string;
-    due_date: number | null;
+    due_date: Date | null;
     status: string;
     owner_name: string | null;
     interaction_id: string | null;
@@ -42,10 +42,10 @@ export default async function ActionsPage({ searchParams }: { searchParams: Prom
     ORDER BY a.due_date ASC NULLS LAST
   `);
 
-  const counts = await db.all<{ filter: string; count: number }>(sql`
+  const counts = await dbAll<{ filter: string; count: number }>(sql`
     SELECT 'mine' AS filter, COUNT(*) AS count FROM action_items WHERE status = 'open' AND owner_user_id = ${user.id}
     UNION ALL SELECT 'all', COUNT(*) FROM action_items WHERE status = 'open'
-    UNION ALL SELECT 'overdue', COUNT(*) FROM action_items WHERE status = 'open' AND due_date < ${Math.floor(Date.now() / 1000)}
+    UNION ALL SELECT 'overdue', COUNT(*) FROM action_items WHERE status = 'open' AND due_date < ${new Date()}
     UNION ALL SELECT 'done', COUNT(*) FROM action_items WHERE status = 'done'
   `);
   const countOf = (k: string) => counts.find((c) => c.filter === k)?.count ?? 0;
@@ -69,7 +69,7 @@ export default async function ActionsPage({ searchParams }: { searchParams: Prom
           <div className="px-5 py-12 text-center text-sm text-slate-500">No items in this view.</div>
         )}
         {rows.map((a) => {
-          const overdue = a.due_date && a.due_date * 1000 < Date.now() && a.status === 'open';
+          const overdue = a.due_date && new Date(a.due_date).getTime() < Date.now() && a.status === 'open';
           return (
             <div key={a.id} className="px-5 py-4 hover:bg-slate-50">
               <div className="flex items-start gap-3">
@@ -89,7 +89,7 @@ export default async function ActionsPage({ searchParams }: { searchParams: Prom
                   <div className="flex items-center gap-3 mt-1.5 text-xs">
                     {a.due_date ? (
                       <span className={overdue ? 'text-rose-600 font-medium' : 'text-slate-500'}>
-                        {overdue ? 'Overdue · ' : 'Due '} {formatDate(new Date(a.due_date * 1000))}
+                        {overdue ? 'Overdue · ' : 'Due '} {formatDate(new Date(a.due_date))}
                       </span>
                     ) : (
                       <span className="text-slate-500">No due date</span>

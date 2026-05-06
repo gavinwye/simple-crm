@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { db } from '@/db';
+import { db, dbAll } from '@/db';
 import { requireRole } from '@/lib/auth';
 import { addTeamMember } from '@/lib/users';
 import { avatarClasses, initials, formatDateTime } from '@/lib/utils';
@@ -8,7 +8,7 @@ import { TeamRoleSelect } from './_role-select';
 export default async function TeamSettingsPage() {
   const actor = await requireRole('admin');
 
-  const rows = await db.all<{
+  const rows = await dbAll<{
     id: string;
     name: string;
     email: string;

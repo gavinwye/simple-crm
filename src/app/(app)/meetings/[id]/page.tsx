@@ -58,7 +58,7 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
 
   const tags = parseTags(interaction.tags);
   const decisions = parseTags(interaction.decisions);
-  const orgsSet = new Map<string, { id: string; name: string; commonName: string | null }>();
+  const orgsSet = new Map<string, { id: string; slug: string; name: string; commonName: string | null }>();
   externalAttendees.forEach(({ organisation }) => {
     if (organisation) orgsSet.set(organisation.id, organisation);
   });

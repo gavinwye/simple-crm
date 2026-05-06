@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { sql } from 'drizzle-orm';
-import { db } from '@/db';
+import { db, dbAll } from '@/db';
 import { typeLabel } from '@/lib/org-tree';
 import { cn } from '@/lib/utils';
 
@@ -38,7 +38,7 @@ export default async function OrganisationsPage({
   const { filter = 'all' } = await searchParams;
   const activeFilter = FILTERS.find((f) => f.key === filter) ?? FILTERS[0];
 
-  const allOrgs = await db.all<{
+  const allOrgs = await dbAll<{
     id: string;
     slug: string;
     name: string;

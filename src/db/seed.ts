@@ -1,20 +1,15 @@
 // Seed the local database with the prototype's fictional data.
 // Run with: npm run db:seed (it will wipe and recreate the contents).
 
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
 import * as schema from './schema';
-import path from 'node:path';
-import fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
 
-const dbPath = process.env.DATABASE_URL ?? 'data/dev.db';
-const dir = path.dirname(dbPath);
-if (dir && dir !== '.' && !fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-const sqlite = new Database(dbPath);
-sqlite.pragma('foreign_keys = ON');
-const db = drizzle(sqlite, { schema });
+const url = process.env.DATABASE_URL;
+if (!url) throw new Error('DATABASE_URL environment variable is required');
+const client = neon(url);
+const db = drizzle(client, { schema });
 
 const id = () => randomUUID();
 const daysAgo = (n: number) => new Date(Date.now() - n * 86400000);
@@ -24,23 +19,23 @@ async function main() {
   console.log('Seeding database…');
 
   // Clear in dependency order
-  db.delete(schema.actionItems).run();
-  db.delete(schema.interactionParticipants).run();
-  db.delete(schema.interactionInternalAttendees).run();
-  db.delete(schema.interactions).run();
-  db.delete(schema.contacts).run();
-  db.delete(schema.organisations).run();
-  db.delete(schema.projects).run();
-  db.delete(schema.sessions).run();
-  db.delete(schema.auditLog).run();
-  db.delete(schema.users).run();
+  await db.delete(schema.actionItems);
+  await db.delete(schema.interactionParticipants);
+  await db.delete(schema.interactionInternalAttendees);
+  await db.delete(schema.interactions);
+  await db.delete(schema.contacts);
+  await db.delete(schema.organisations);
+  await db.delete(schema.projects);
+  await db.delete(schema.sessions);
+  await db.delete(schema.auditLog);
+  await db.delete(schema.users);
 
   // --- Users ---
   const abisolaId = id();
   const rohanId = id();
   const ngozi = id();
 
-  db.insert(schema.users)
+  await db.insert(schema.users)
     .values([
       {
         id: abisolaId,
@@ -64,7 +59,7 @@ async function main() {
         avatarColour: 'violet',
       },
     ])
-    .run();
+    ;
 
   // --- Organisations ---
   // Ministries
@@ -86,7 +81,7 @@ async function main() {
   const cdbId = id();
   const idbId = id();
 
-  db.insert(schema.organisations)
+  await db.insert(schema.organisations)
     .values([
       // Ministries (no parent)
       { id: mistId, slug: 'mist', name: 'Min. of Innovation, Science and Smart Technology', commonName: 'MIST', type: 'ministry', tags: ['priority', 'digital-id'], website: 'mist.gov.bb', createdBy: abisolaId },
@@ -106,7 +101,7 @@ async function main() {
       { id: cdbId, slug: 'cdb', name: 'Caribbean Development Bank', commonName: 'CDB', type: 'multilateral', tags: [], createdBy: abisolaId },
       { id: idbId, slug: 'idb', name: 'Inter-American Development Bank', commonName: 'IDB', type: 'multilateral', tags: [], createdBy: abisolaId },
     ])
-    .run();
+    ;
 
   // --- Projects ---
   const digitalIdProjectId = id();
@@ -114,14 +109,14 @@ async function main() {
   const cloudProjectId = id();
   const openDataProjectId = id();
 
-  db.insert(schema.projects)
+  await db.insert(schema.projects)
     .values([
       { id: digitalIdProjectId, name: 'Digital ID', description: 'TridentID expansion across MDAs', status: 'active', leadUserId: abisolaId },
       { id: g2gProjectId, name: 'G2G Payments', description: 'Government-to-government payment rails', status: 'active', leadUserId: rohanId },
       { id: cloudProjectId, name: 'Cloud migration', description: 'Phased migration of legacy MDA systems', status: 'planning', leadUserId: abisolaId },
       { id: openDataProjectId, name: 'Open Data Portal', description: 'Public data publication pipeline', status: 'planning', leadUserId: rohanId },
     ])
-    .run();
+    ;
 
   // --- Contacts ---
   const sandraId = id();
@@ -139,7 +134,7 @@ async function main() {
   const rohanFordeId = id();
   const jamalId = id();
 
-  db.insert(schema.contacts)
+  await db.insert(schema.contacts)
     .values([
       { id: sandraId, slug: 'sandra-husbands', fullName: 'Sandra Husbands', title: 'Chief Information Officer', organisationId: mistId, primaryEmail: 'sandra.husbands@mist.gov.bb', phone: '+1 246 555 0142', tags: ['champion', 'digital-id', 'warm'], avatarColour: 'blue', createdBy: abisolaId },
       { id: marcusId, slug: 'marcus-bynoe', fullName: 'Marcus Bynoe', title: 'Permanent Secretary', organisationId: mofId, primaryEmail: 'marcus.bynoe@finance.gov.bb', sensitive: true, tags: ['decision-maker'], avatarColour: 'rose', createdBy: abisolaId },
@@ -156,7 +151,7 @@ async function main() {
       { id: rohanFordeId, slug: 'rohan-forde', fullName: 'Rohan Forde', title: 'Procurement Lead', organisationId: mistId, primaryEmail: 'rohan.forde@mist.gov.bb', tags: ['procurement'], avatarColour: 'teal', createdBy: abisolaId },
       { id: jamalId, slug: 'jamal-greenidge', fullName: 'Jamal Greenidge', title: 'Cabinet Liaison Officer', organisationId: mistId, primaryEmail: 'jamal.greenidge@mist.gov.bb', tags: ['new'], avatarColour: 'amber', createdBy: abisolaId },
     ])
-    .run();
+    ;
 
   // --- Interactions ---
   const m1Id = id(); // Digital ID quarterly review (23 Apr)
@@ -168,7 +163,7 @@ async function main() {
   const e2Id = id(); // Funding window – Caribbean Digital Acceleration
   const n1Id = id(); // Note on Sandra
 
-  db.insert(schema.interactions)
+  await db.insert(schema.interactions)
     .values([
       {
         id: m1Id,
@@ -291,10 +286,10 @@ Sandra`,
         createdBy: abisolaId,
       },
     ])
-    .run();
+    ;
 
   // --- Participants ---
-  db.insert(schema.interactionParticipants)
+  await db.insert(schema.interactionParticipants)
     .values([
       // Meeting 1 — Digital ID quarterly review
       { interactionId: m1Id, contactId: sandraId, role: 'attendee' },
@@ -320,10 +315,10 @@ Sandra`,
       // Note — about Sandra
       { interactionId: n1Id, contactId: sandraId, role: 'attendee' },
     ])
-    .run();
+    ;
 
   // --- Internal attendees (GovTech) ---
-  db.insert(schema.interactionInternalAttendees)
+  await db.insert(schema.interactionInternalAttendees)
     .values([
       { interactionId: m1Id, userId: abisolaId },
       { interactionId: m1Id, userId: rohanId },
@@ -332,10 +327,10 @@ Sandra`,
       { interactionId: m4Id, userId: abisolaId },
       { interactionId: m5Id, userId: abisolaId },
     ])
-    .run();
+    ;
 
   // --- Action items ---
-  db.insert(schema.actionItems)
+  await db.insert(schema.actionItems)
     .values([
       {
         id: id(),
@@ -412,7 +407,7 @@ Sandra`,
         status: 'open',
       },
     ])
-    .run();
+    ;
 
   console.log('Seed complete.');
   console.log(`Users:         3`);
