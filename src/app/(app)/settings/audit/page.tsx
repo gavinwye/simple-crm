@@ -6,7 +6,7 @@ import { avatarClasses, initials, formatDateTime, cn } from '@/lib/utils';
 
 type Row = {
   id: string;
-  occurred_at: number;
+  occurred_at: Date;
   action: string;
   entity_type: string;
   entity_id: string | null;
@@ -98,7 +98,7 @@ export default async function AuditLogPage({
               return (
                 <tr key={r.id} className="align-top">
                   <td className="px-5 py-3 whitespace-nowrap text-slate-600 text-xs font-mono">
-                    {formatDateTime(new Date(r.occurred_at * 1000))}
+                    {formatDateTime(new Date(r.occurred_at))}
                   </td>
                   <td className="px-5 py-3">
                     {r.actor_name ? (

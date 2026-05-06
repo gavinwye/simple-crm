@@ -14,8 +14,8 @@ export default async function TeamSettingsPage() {
     email: string;
     role: string;
     avatar_colour: string;
-    created_at: number;
-    last_session: number | null;
+    created_at: Date;
+    last_session: Date | null;
   }>(sql`
     SELECT u.id, u.name, u.email, u.role, u.avatar_colour, u.created_at,
       (SELECT MAX(s.created_at) FROM sessions s WHERE s.user_id = u.id) AS last_session
@@ -66,11 +66,11 @@ export default async function TeamSettingsPage() {
                   </td>
                   <td className="px-5 py-3 text-slate-600 text-xs">
                     {u.last_session
-                      ? formatDateTime(new Date(u.last_session * 1000))
+                      ? formatDateTime(new Date(u.last_session))
                       : <span className="text-slate-400">never</span>}
                   </td>
                   <td className="px-5 py-3 text-slate-600 text-xs">
-                    {formatDateTime(new Date(u.created_at * 1000))}
+                    {formatDateTime(new Date(u.created_at))}
                   </td>
                 </tr>
               );

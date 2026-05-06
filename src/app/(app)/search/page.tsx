@@ -5,7 +5,7 @@ import { initials, formatDate, avatarClasses } from '@/lib/utils';
 
 type ContactHit = { kind: 'contact'; id: string; slug: string; full_name: string; title: string | null; organisation_name: string | null; avatar_colour: string };
 type OrgHit = { kind: 'organisation'; id: string; slug: string; name: string; type: string };
-type InteractionHit = { kind: 'interaction'; id: string; title: string; ikind: string; occurred_at: number; summary: string | null; body: string | null; review_status: string };
+type InteractionHit = { kind: 'interaction'; id: string; title: string; ikind: string; occurred_at: Date; summary: string | null; body: string | null; review_status: string };
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams;
@@ -144,7 +144,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                     {snippet && (
                       <p className="text-sm text-slate-600 mt-1 line-clamp-2">{highlight(snippet, term)}</p>
                     )}
-                    <p className="text-xs text-slate-500 mt-1">{formatDate(new Date(i.occurred_at * 1000))}</p>
+                    <p className="text-xs text-slate-500 mt-1">{formatDate(new Date(i.occurred_at))}</p>
                   </div>
                 </div>
               </Link>

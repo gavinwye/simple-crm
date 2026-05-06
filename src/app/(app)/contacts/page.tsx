@@ -23,7 +23,7 @@ export default async function ContactsPage({
     tags: string;
     organisation_name: string | null;
     organisation_common_name: string | null;
-    last_seen: number | null;
+    last_seen: Date | null;
     interaction_count: number;
   }>(sql`
     SELECT c.id, c.slug, c.full_name, c.title, c.primary_email, c.sensitive, c.avatar_colour, c.tags,
@@ -98,7 +98,7 @@ export default async function ContactsPage({
             {rows.map((r) => {
               const tags = parseTags(r.tags);
               const c = avatarClasses(r.avatar_colour);
-              const lastSeen = r.last_seen ? new Date(r.last_seen * 1000) : null;
+              const lastSeen = r.last_seen ? new Date(r.last_seen) : null;
               const dormant = lastSeen && Date.now() - lastSeen.getTime() > 90 * 86400000;
               return (
                 <tr key={r.id} className="hover:bg-slate-50">

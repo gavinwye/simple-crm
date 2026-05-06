@@ -22,7 +22,7 @@ export default async function EmailSettingsPage() {
   // Recent ingest activity
   const recent = await dbAll<{
     id: string;
-    occurred_at: number;
+    occurred_at: Date;
     title: string;
     email_from_address: string | null;
     review_status: string;
@@ -138,7 +138,7 @@ export default async function EmailSettingsPage() {
                   {r.review_status}
                 </span>
                 <span className="text-slate-500 whitespace-nowrap">
-                  {formatDateTime(new Date(r.occurred_at * 1000))}
+                  {formatDateTime(new Date(r.occurred_at))}
                 </span>
               </div>
             </li>

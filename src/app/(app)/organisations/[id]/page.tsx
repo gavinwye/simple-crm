@@ -38,7 +38,7 @@ export default async function OrganisationDetailPage({
     title: string | null;
     avatar_colour: string;
     sensitive: number;
-    last_seen: number | null;
+    last_seen: Date | null;
     interactions_count: number;
   }>(sql`
     SELECT c.id, c.slug, c.full_name, c.title, c.avatar_colour, c.sensitive,
@@ -57,7 +57,7 @@ export default async function OrganisationDetailPage({
     id: string;
     title: string;
     kind: string;
-    occurred_at: number;
+    occurred_at: Date;
     summary: string | null;
   }>(sql`
     SELECT DISTINCT i.id, i.title, i.kind, i.occurred_at, i.summary
@@ -217,7 +217,7 @@ export default async function OrganisationDetailPage({
                         </div>
                         <div className="text-xs text-slate-500">
                           {p.title ?? '—'}
-                          {p.last_seen ? ` · Last contact ${relativeDays(new Date(p.last_seen * 1000))}` : ''}
+                          {p.last_seen ? ` · Last contact ${relativeDays(new Date(p.last_seen))}` : ''}
                         </div>
                       </div>
                       <span className="text-xs text-slate-500">
@@ -247,7 +247,7 @@ export default async function OrganisationDetailPage({
                         {r.kind.charAt(0).toUpperCase() + r.kind.slice(1)}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5">{formatDate(new Date(r.occurred_at * 1000))}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{formatDate(new Date(r.occurred_at))}</p>
                   </Link>
                 </li>
               ))}
