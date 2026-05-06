@@ -44,7 +44,7 @@ curl -X POST http://localhost:3000/api/inbound/email \
   -H "content-type: application/json" \
   -d '{
     "From": "sandra.husbands@mist.gov.bb",
-    "To": "abisola@govtech.gov.bb",
+    "To": "abisola@govtech.bb",
     "Cc": "marcus.bynoe@finance.gov.bb",
     "Subject": "Quick update on the rollout",
     "TextBody": "Hi Abisola, could you please refresh the risk register before Friday and share with the team? Thanks, Sandra"
@@ -70,7 +70,7 @@ Create OAuth client credentials in Google Cloud (web application, redirect URI `
 ```
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
-ALLOWED_HD=govtech.gov.bb
+ALLOWED_HD=govtech.bb
 ```
 
 When `GOOGLE_CLIENT_ID` is set the sign-in page shows the Google button instead of the user picker. Sign-in is rejected unless the ID token's `hd` claim matches `ALLOWED_HD`.

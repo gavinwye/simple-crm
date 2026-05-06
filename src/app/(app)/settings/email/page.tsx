@@ -8,7 +8,7 @@ import { formatDateTime } from '@/lib/utils';
 export default async function EmailSettingsPage() {
   await requireRole('admin');
 
-  const inboundAddress = process.env.INBOUND_EMAIL_ADDRESS ?? 'crm@inbound.govtech.gov.bb';
+  const inboundAddress = process.env.INBOUND_EMAIL_ADDRESS ?? 'crm@inbound.govtech.bb';
   const tokenSet = !!process.env.INBOUND_EMAIL_TOKEN;
   const claudeKeySet = !!process.env.ANTHROPIC_API_KEY;
   const allowedHd = process.env.ALLOWED_HD ?? '';

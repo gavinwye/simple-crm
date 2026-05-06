@@ -19,12 +19,12 @@ import { logAudit } from '@/lib/audit';
  *  {
  *    "From": "sandra.husbands@mist.gov.bb",
  *    "FromName": "Sandra Husbands",
- *    "To": "abisola@govtech.gov.bb",
+ *    "To": "abisola@govtech.bb",
  *    "Cc": "marcus.bynoe@finance.gov.bb",
  *    "Subject": "Re: TridentID rollout",
  *    "TextBody": "...",
  *    "MessageID": "...",
- *    "OriginalRecipient": "crm@inbound.govtech.gov.bb"
+ *    "OriginalRecipient": "crm@inbound.govtech.bb"
  *  }
  *
  * For SES inbound, normalise the payload upstream (Lambda) before posting here.

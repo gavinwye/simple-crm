@@ -39,21 +39,21 @@ async function main() {
     .values([
       {
         id: abisolaId,
-        email: 'abisola@govtech.gov.bb',
+        email: 'abisola@govtech.bb',
         name: 'Abisola Fatokun',
         role: 'admin',
         avatarColour: 'amber',
       },
       {
         id: rohanId,
-        email: 'rohan.marshall@govtech.gov.bb',
+        email: 'rohan.marshall@govtech.bb',
         name: 'Rohan Marshall',
         role: 'member',
         avatarColour: 'emerald',
       },
       {
         id: ngozi,
-        email: 'ngozi.adeyemi@govtech.gov.bb',
+        email: 'ngozi.adeyemi@govtech.bb',
         name: 'Ngozi Adeyemi',
         role: 'viewer',
         avatarColour: 'violet',
